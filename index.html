@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ant Colony Optimization (ACO) – Live TSP Digital Model</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --panel:#111a33;
+      --panel2:#0f1730;
+      --text:#e9eefc;
+      --muted:#a7b3d6;
+      --accent:#4cfdde;
+      --accent2:#e65ca5;
+      --good:#62d26f;
+      --warn:#ffcc66;
+      --bad:#ff6b6b;
+      --line:#2a3b77;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family:var(--sans);
+      color:var(--text);
+      background: radial-gradient(1200px 700px at 10% 10%, #182a6b 0%, var(--bg) 55%) fixed;
+    }
+    header{
+      padding: 22px 18px 10px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    header h1{
+      margin:0;
+      font-size: 22px;
+      letter-spacing: .2px;
+      font-weight: 650;
+    }
+    header p{
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.45;
+      max-width: 900px;
+    }
+
+    .wrap{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 12px 18px 22px;
+      display: grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap: 14px;
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .canvas-card{
+      padding: 12px;
+      display:flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .topbar{
+      display:flex;
+      gap:10px;
+      flex-wrap: wrap;
+      align-items:center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.2);
+      border: 1px solid rgba(255,255,255,.06);
+    }
+
+    .stats{
+      display:flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      align-items:center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .pill{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(17,26,51,.65);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .pill b{ color: var(--text); font-weight: 650; }
+
+    canvas{
+      width: 100%;
+      height: 520px;
+      border-radius: 14px;
+      background:
+        radial-gradient(600px 400px at 50% 20%, rgba(76,253,222,.14), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .hint{
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+      padding: 0 4px;
+    }
+
+    .side{
+      padding: 12px;
+      display:flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .section{
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.2);
+      border: 1px solid rgba(255,255,255,.06);
+    }
+
+    .section h2{
+      margin: 0 0 10px;
+      font-size: 14px;
+      letter-spacing: .3px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    label{
+      font-size: 12px;
+      color: var(--muted);
+      display:flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    input[type="range"]{ width:100%; }
+    input[type="number"]{
+      width: 92px;
+      padding: 7px 9px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(15,23,48,.7);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      outline: none;
+    }
+
+    .btnrow{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button{
+      cursor:pointer;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(17,26,51,.78);
+      color: var(--text);
+      font-weight: 650;
+      letter-spacing: .2px;
+      transition: transform .05s ease, background .2s ease;
+    }
+    button:hover{ background: rgba(27,40,78,.85); }
+    button:active{ transform: translateY(1px); }
+    button.primary{
+      border-color: rgba(76,253,222,.35);
+      background: rgba(76,253,222,.15);
+    }
+    button.danger{
+      border-color: rgba(255,107,107,.35);
+      background: rgba(255,107,107,.12);
+    }
+    button.secondary{
+      border-color: rgba(230,92,165,.35);
+      background: rgba(230,92,165,.12);
+    }
+    button:disabled{
+      opacity: .55;
+      cursor:not-allowed;
+    }
+
+    .codebox{
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #d8e2ff;
+      background: rgba(12,18,38,.7);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 10px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
+    .mini{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .legend{ display:flex; gap:12px; flex-wrap:wrap; margin-top: 10px; }
+    .dot{ width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; }
+
+    .footer{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 18px 22px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 980px){
+      .wrap{ grid-template-columns: 1fr; }
+      canvas{ height: 430px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Ant Colony Optimization (ACO) – Live Traveling Salesman Problem (TSP) Model</h1>
+    <p>
+      Drag cities on the canvas, add or randomize points, then run ACO to find a short tour.
+      This is a digital model to demonstrate that the ACO algorithm can be replicated and applied (here: to TSP).
+      In an antivirus analogy, the “tour” can represent an optimized scanning/inspection order that reduces total cost/time.
+    </p>
+  </header>
+
+  <main class="wrap">
+    <section class="card canvas-card">
+      <div class="topbar">
+        <div class="stats">
+          <span class="pill">Cities: <b id="citiesCount">0</b></span>
+          <span class="pill">Best distance: <b id="bestDistance">–</b></span>
+          <span class="pill">Iteration: <b id="iterCount">0</b></span>
+          <span class="pill">Status: <b id="status">Idle</b></span>
+        </div>
+        <div class="btnrow">
+          <button id="btnAdd" class="secondary">Add city</button>
+          <button id="btnRandom">Random 10</button>
+          <button id="btnClear" class="danger">Clear</button>
+          <button id="btnSolve" class="primary">Solve (animate)</button>
+          <button id="btnSolveOnce">Solve (fast)</button>
+          <button id="btnStop" disabled>Stop</button>
+        </div>
+      </div>
+
+      <canvas id="cv" width="980" height="520" aria-label="TSP canvas"></canvas>
+      <div class="hint">
+        Tips: Drag any city to change the map. You can also click on the canvas to add a city (when not solving).
+        Use “Solve (animate)” to watch convergence, or “Solve (fast)” for a quick result.
+      </div>
+    </section>
+
+    <aside class="card side">
+      <div class="section">
+        <h2>ACO parameters (controls)</h2>
+        <div class="grid">
+          <div>
+            <label>Ants <span id="antsVal" class="mini"></span></label>
+            <input id="ants" type="range" min="5" max="200" value="40" />
+          </div>
+          <div>
+            <label>Iterations <span id="itersVal" class="mini"></span></label>
+            <input id="iters" type="range" min="10" max="2000" value="300" />
+          </div>
+          <div>
+            <label>α (pheromone weight) <span id="alphaVal" class="mini"></span></label>
+            <input id="alpha" type="range" min="0" max="5" step="0.1" value="1.0" />
+          </div>
+          <div>
+            <label>β (distance weight) <span id="betaVal" class="mini"></span></label>
+            <input id="beta" type="range" min="0" max="10" step="0.1" value="3.0" />
+          </div>
+          <div>
+            <label>ρ (evaporation) <span id="rhoVal" class="mini"></span></label>
+            <input id="rho" type="range" min="0.0" max="0.9" step="0.01" value="0.25" />
+          </div>
+          <div>
+            <label>Q (deposit factor) <span id="qVal" class="mini"></span></label>
+            <input id="q" type="range" min="1" max="500" value="100" />
+          </div>
+          <div>
+            <label>Elitism (best-so-far deposit) <span id="eliteVal" class="mini"></span></label>
+            <input id="elite" type="range" min="0" max="10" step="1" value="2" />
+          </div>
+          <div>
+            <label>Seed <span class="mini">(optional)</span></label>
+            <input id="seed" type="number" placeholder="e.g. 123" />
+          </div>
+        </div>
+        <div class="legend mini">
+          <span><span class="dot" style="background: var(--accent)"></span>Best tour</span>
+          <span><span class="dot" style="background: rgba(255,255,255,.75)"></span>City</span>
+          <span><span class="dot" style="background: var(--accent2)"></span>Start city</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>What the model demonstrates</h2>
+        <div class="mini">
+          <div>
+            ACO uses many “ants” to build candidate tours. Each choice is biased by:
+            (1) pheromone on an edge (learned from good tours), and (2) how close the next city is.
+            After every iteration, pheromone evaporates and good tours deposit pheromone, so short routes become more likely.
+          </div>
+          <div style="margin-top:10px">
+            Antivirus link (conceptual): scanning/inspection can be treated like visiting many items with a cost (time/CPU).
+            ACO-style reinforcement can bias the system toward efficient inspection orders under changing conditions.
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Algorithm snapshot (this implementation)</h2>
+        <div class="codebox" id="algoBox"></div>
+      </div>
+    </aside>
+  </main>
+
+  <div class="footer">
+    Built as a single, self-contained HTML file (embedded CSS + JavaScript). No external libraries.
+  </div>
+
+<script>
+(() => {
+  // -------------------------
+  // Utility: seeded RNG (optional)
+  // -------------------------
+  function mulberry32(a){
+    return function(){
+      let t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+  }
+
+  const ui = {
+    cv: document.getElementById('cv'),
+    citiesCount: document.getElementById('citiesCount'),
+    bestDistance: document.getElementById('bestDistance'),
+    iterCount: document.getElementById('iterCount'),
+    status: document.getElementById('status'),
+
+    btnAdd: document.getElementById('btnAdd'),
+    btnRandom: document.getElementById('btnRandom'),
+    btnClear: document.getElementById('btnClear'),
+    btnSolve: document.getElementById('btnSolve'),
+    btnSolveOnce: document.getElementById('btnSolveOnce'),
+    btnStop: document.getElementById('btnStop'),
+
+    ants: document.getElementById('ants'),
+    iters: document.getElementById('iters'),
+    alpha: document.getElementById('alpha'),
+    beta: document.getElementById('beta'),
+    rho: document.getElementById('rho'),
+    q: document.getElementById('q'),
+    elite: document.getElementById('elite'),
+    seed: document.getElementById('seed'),
+
+    antsVal: document.getElementById('antsVal'),
+    itersVal: document.getElementById('itersVal'),
+    alphaVal: document.getElementById('alphaVal'),
+    betaVal: document.getElementById('betaVal'),
+    rhoVal: document.getElementById('rhoVal'),
+    qVal: document.getElementById('qVal'),
+    eliteVal: document.getElementById('eliteVal'),
+
+    algoBox: document.getElementById('algoBox')
+  };
+
+  const ctx = ui.cv.getContext('2d');
+
+  // -------------------------
+  // State
+  // -------------------------
+  let cities = [];
+  let dragging = null;
+  let dragOffset = {x:0,y:0};
+
+  let solving = false;
+  let stopRequested = false;
+
+  // ACO state
+  let dist = [];
+  let pher = [];
+  let bestTour = null;
+  let bestLen = Infinity;
+  let iter = 0;
+  let rng = Math.random;
+
+  function setStatus(s){ ui.status.textContent = s; }
+
+  function resizeCanvasToCSS(){
+    // Keep internal resolution matched to CSS size for crisp lines.
+    const rect = ui.cv.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.round(rect.width * dpr);
+    const h = Math.round(rect.height * dpr);
+    if(ui.cv.width !== w || ui.cv.height !== h){
+      ui.cv.width = w;
+      ui.cv.height = h;
+    }
+  }
+
+  // -------------------------
+  // Geometry / drawing
+  // -------------------------
+  function draw(){
+    resizeCanvasToCSS();
+    const w = ui.cv.width, h = ui.cv.height;
+
+    ctx.clearRect(0,0,w,h);
+
+    // subtle grid
+    ctx.save();
+    ctx.globalAlpha = 0.15;
+    ctx.strokeStyle = '#2a3b77';
+    ctx.lineWidth = 1;
+    const step = Math.max(40, Math.floor(Math.min(w,h)/14));
+    for(let x=0;x<w;x+=step){
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
+    }
+    for(let y=0;y<h;y+=step){
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+    }
+    ctx.restore();
+
+    // draw best tour
+    if(bestTour && bestTour.length === cities.length && cities.length >= 2){
+      ctx.save();
+      ctx.strokeStyle = 'rgba(76,253,222,0.95)';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = 'rgba(76,253,222,0.25)';
+      ctx.shadowBlur = 12;
+
+      ctx.beginPath();
+      const start = cities[bestTour[0]];
+      ctx.moveTo(start.x, start.y);
+      for(let k=1;k<bestTour.length;k++){
+        const c = cities[bestTour[k]];
+        ctx.lineTo(c.x, c.y);
+      }
+      ctx.lineTo(start.x, start.y);
+      ctx.stroke();
+      ctx.restore();
+
+      // show direction arrows
+      ctx.save();
+      ctx.fillStyle = 'rgba(76,253,222,0.65)';
+      for(let k=0;k<bestTour.length;k++){
+        const a = cities[bestTour[k]];
+        const b = cities[bestTour[(k+1)%bestTour.length]];
+        const mx = (a.x+b.x)/2, my=(a.y+b.y)/2;
+        const ang = Math.atan2(b.y-a.y, b.x-a.x);
+        ctx.translate(mx,my);
+        ctx.rotate(ang);
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.lineTo(-10, -5);
+        ctx.lineTo(-10, 5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.setTransform(1,0,0,1,0,0);
+      }
+      ctx.restore();
+    }
+
+    // draw cities
+    for(let i=0;i<cities.length;i++){
+      const c = cities[i];
+      const isStart = bestTour && bestTour[0] === i;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, 9, 0, Math.PI*2);
+      ctx.fillStyle = isStart ? 'rgba(230,92,165,0.95)' : 'rgba(255,255,255,0.85)';
+      ctx.shadowColor = isStart ? 'rgba(230,92,165,0.35)' : 'rgba(255,255,255,0.25)';
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.restore();
+
+      // label
+      ctx.save();
+      ctx.font = `${12*(window.devicePixelRatio||1)}px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.fillStyle = 'rgba(167,179,214,0.9)';
+      ctx.fillText(String(i+1), c.x + 12, c.y - 10);
+      ctx.restore();
+    }
+  }
+
+  function canvasToLocal(evt){
+    const rect = ui.cv.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    return {
+      x: (evt.clientX - rect.left) * dpr,
+      y: (evt.clientY - rect.top) * dpr
+    };
+  }
+
+  function findCityAt(x,y){
+    for(let i=cities.length-1;i>=0;i--){
+      const c = cities[i];
+      const dx=x-c.x, dy=y-c.y;
+      if(dx*dx + dy*dy <= 11*11) return i;
+    }
+    return null;
+  }
+
+  // -------------------------
+  // TSP/ACO helpers
+  // -------------------------
+  function computeDistanceMatrix(){
+    const n = cities.length;
+    dist = Array.from({length:n}, () => Array(n).fill(0));
+    for(let i=0;i<n;i++){
+      for(let j=i+1;j<n;j++){
+        const dx = cities[i].x - cities[j].x;
+        const dy = cities[i].y - cities[j].y;
+        const d = Math.hypot(dx,dy);
+        dist[i][j] = dist[j][i] = d;
+      }
+    }
+  }
+
+  function initPheromones(){
+    const n = cities.length;
+    const tau0 = 1.0; // simple constant start
+    pher = Array.from({length:n}, () => Array(n).fill(tau0));
+    for(let i=0;i<n;i++) pher[i][i] = 0;
+  }
+
+  function tourLength(tour){
+    let L = 0;
+    for(let i=0;i<tour.length;i++){
+      const a = tour[i];
+      const b = tour[(i+1) % tour.length];
+      L += dist[a][b];
+    }
+    return L;
+  }
+
+  function roulettePick(items, weights){
+    let sum = 0;
+    for(const w of weights) sum += w;
+    if(sum <= 0){
+      // if all weights are zero, pick uniformly
+      return items[Math.floor(rng() * items.length)];
+    }
+    let r = rng() * sum;
+    for(let i=0;i<items.length;i++){
+      r -= weights[i];
+      if(r <= 0) return items[i];
+    }
+    return items[items.length-1];
+  }
+
+  function buildTour(alpha, beta){
+    const n = cities.length;
+    const start = Math.floor(rng() * n);
+    const visited = new Array(n).fill(false);
+    visited[start] = true;
+    const tour = [start];
+
+    while(tour.length < n){
+      const current = tour[tour.length - 1];
+      const candidates = [];
+      const weights = [];
+      for(let j=0;j<n;j++){
+        if(!visited[j]){
+          candidates.push(j);
+          const tau = pher[current][j];
+          const eta = (dist[current][j] > 0) ? 1.0 / dist[current][j] : 0;
+          // probability proportional to tau^alpha * eta^beta
+          const w = Math.pow(tau, alpha) * Math.pow(eta, beta);
+          weights.push(w);
+        }
+      }
+      const next = roulettePick(candidates, weights);
+      visited[next] = true;
+      tour.push(next);
+    }
+    return tour;
+  }
+
+  function evaporate(rho){
+    const n = cities.length;
+    const keep = 1 - rho;
+    for(let i=0;i<n;i++){
+      for(let j=0;j<n;j++){
+        pher[i][j] *= keep;
+      }
+    }
+  }
+
+  function deposit(tour, L, Q){
+    const n = tour.length;
+    const delta = Q / L;
+    for(let k=0;k<n;k++){
+      const a = tour[k];
+      const b = tour[(k+1)%n];
+      pher[a][b] += delta;
+      pher[b][a] += delta;
+    }
+  }
+
+  function clampPheromones(){
+    // avoid extreme values (keeps probabilities stable)
+    const n = cities.length;
+    let min = Infinity, max = -Infinity;
+    for(let i=0;i<n;i++){
+      for(let j=0;j<n;j++){
+        const v = pher[i][j];
+        if(v < min) min = v;
+        if(v > max) max = v;
+      }
+    }
+    // if values blow up, rescale softly
+    if(max > 1e6){
+      const scale = 1e6 / max;
+      for(let i=0;i<n;i++) for(let j=0;j<n;j++) pher[i][j] *= scale;
+    }
+    if(min < 1e-9){
+      for(let i=0;i<n;i++) for(let j=0;j<n;j++) pher[i][j] = Math.max(pher[i][j], 1e-9);
+    }
+  }
+
+  function updateUI(){
+    ui.citiesCount.textContent = cities.length;
+    ui.iterCount.textContent = iter;
+    ui.bestDistance.textContent = Number.isFinite(bestLen) ? bestLen.toFixed(1) : '–';
+
+    ui.antsVal.textContent = ui.ants.value;
+    ui.itersVal.textContent = ui.iters.value;
+    ui.alphaVal.textContent = ui.alpha.value;
+    ui.betaVal.textContent = ui.beta.value;
+    ui.rhoVal.textContent = ui.rho.value;
+    ui.qVal.textContent = ui.q.value;
+    ui.eliteVal.textContent = ui.elite.value;
+
+    ui.btnStop.disabled = !solving;
+    ui.btnSolve.disabled = solving;
+    ui.btnSolveOnce.disabled = solving;
+    ui.btnAdd.disabled = solving;
+    ui.btnRandom.disabled = solving;
+    ui.btnClear.disabled = solving;
+
+    ui.algoBox.textContent =
+`Tour construction probability:
+  P(i→j) ∝ (τ(i,j)^α) * ( (1/d(i,j))^β )
+
+Iteration loop:
+  For each ant: build a tour, compute length
+  Keep global best tour (best-so-far)
+  Evaporate pheromone: τ ← (1−ρ)τ
+  Deposit pheromone: τ(i,j) += Q / L   (for edges on tours)
+  Elitism: additionally deposit on best-so-far edges`;
+  }
+
+  function ensureACOReady(){
+    computeDistanceMatrix();
+    initPheromones();
+    bestTour = null;
+    bestLen = Infinity;
+    iter = 0;
+  }
+
+  function setRNGFromSeed(){
+    const s = ui.seed.value.trim();
+    if(s === ''){ rng = Math.random; return; }
+    const seed = Number(s);
+    if(Number.isFinite(seed)) rng = mulberry32(seed >>> 0);
+    else rng = Math.random;
+  }
+
+  // One iteration of ACO
+  function acoStep(){
+    const n = cities.length;
+    if(n < 3) return;
+
+    const ants = Number(ui.ants.value);
+    const alpha = Number(ui.alpha.value);
+    const beta  = Number(ui.beta.value);
+    const rho   = Number(ui.rho.value);
+    const Q     = Number(ui.q.value);
+    const elite = Number(ui.elite.value);
+
+    const tours = [];
+    for(let k=0;k<ants;k++){
+      const tour = buildTour(alpha, beta);
+      const L = tourLength(tour);
+      tours.push({tour, L});
+      if(L < bestLen){
+        bestLen = L;
+        bestTour = tour.slice();
+      }
+    }
+
+    evaporate(rho);
+
+    for(const t of tours){
+      deposit(t.tour, t.L, Q);
+    }
+
+    // elitist reinforcement for best-so-far tour
+    if(bestTour && elite > 0 && Number.isFinite(bestLen)){
+      for(let e=0;e<elite;e++) deposit(bestTour, bestLen, Q);
+    }
+
+    clampPheromones();
+    iter++;
+  }
+
+  // -------------------------
+  // Solve loops
+  // -------------------------
+  function solveAnimated(){
+    if(solving) return;
+    if(cities.length < 3){
+      setStatus('Add at least 3 cities');
+      return;
+    }
+    stopRequested = false;
+    solving = true;
+    setStatus('Solving…');
+
+    setRNGFromSeed();
+    ensureACOReady();
+    updateUI();
+
+    const maxIter = Number(ui.iters.value);
+
+    // Run a few steps per frame to keep it fast but still visible.
+    const stepsPerFrame = Math.max(1, Math.floor(maxIter / 240)); // ~240 frames target
+
+    function frame(){
+      if(stopRequested){
+        solving = false;
+        setStatus('Stopped');
+        updateUI();
+        draw();
+        return;
+      }
+      const remaining = maxIter - iter;
+      const steps = Math.min(stepsPerFrame, remaining);
+      for(let s=0;s<steps;s++) acoStep();
+      updateUI();
+      draw();
+
+      if(iter >= maxIter){
+        solving = false;
+        setStatus('Done');
+        updateUI();
+        draw();
+        return;
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function solveFast(){
+    if(solving) return;
+    if(cities.length < 3){
+      setStatus('Add at least 3 cities');
+      return;
+    }
+    stopRequested = false;
+    solving = true;
+    setStatus('Solving (fast)…');
+    setRNGFromSeed();
+    ensureACOReady();
+
+    const maxIter = Number(ui.iters.value);
+    // Block run, but yield occasionally to update UI.
+    const chunk = 40;
+    function runChunk(){
+      const target = Math.min(maxIter, iter + chunk);
+      while(iter < target) acoStep();
+      updateUI();
+      draw();
+      if(stopRequested){
+        solving = false;
+        setStatus('Stopped');
+        updateUI();
+        draw();
+        return;
+      }
+      if(iter >= maxIter){
+        solving = false;
+        setStatus('Done');
+        updateUI();
+        draw();
+        return;
+      }
+      setTimeout(runChunk, 0);
+    }
+    runChunk();
+  }
+
+  // -------------------------
+  // City operations
+  // -------------------------
+  function addCity(x,y){
+    cities.push({x,y});
+    bestTour = null; bestLen = Infinity; iter = 0;
+    setStatus('Idle');
+    updateUI();
+    draw();
+  }
+
+  function addRandomCities(n=10){
+    resizeCanvasToCSS();
+    const w = ui.cv.width, h = ui.cv.height;
+    const pad = 26 * (window.devicePixelRatio || 1);
+    for(let i=0;i<n;i++){
+      const x = pad + rng()*(w-2*pad);
+      const y = pad + rng()*(h-2*pad);
+      cities.push({x,y});
+    }
+    bestTour = null; bestLen = Infinity; iter = 0;
+    setStatus('Idle');
+    updateUI();
+    draw();
+  }
+
+  function clearAll(){
+    cities = [];
+    bestTour = null; bestLen = Infinity; iter = 0;
+    setStatus('Idle');
+    updateUI();
+    draw();
+  }
+
+  // -------------------------
+  // Events
+  // -------------------------
+  ui.btnAdd.addEventListener('click', () => {
+    if(solving) return;
+    resizeCanvasToCSS();
+    const w = ui.cv.width, h = ui.cv.height;
+    addCity(w*0.5 + (rng()-0.5)*180*(window.devicePixelRatio||1), h*0.5 + (rng()-0.5)*180*(window.devicePixelRatio||1));
+  });
+
+  ui.btnRandom.addEventListener('click', () => {
+    if(solving) return;
+    setRNGFromSeed();
+    addRandomCities(10);
+  });
+
+  ui.btnClear.addEventListener('click', () => {
+    if(solving) return;
+    clearAll();
+  });
+
+  ui.btnSolve.addEventListener('click', solveAnimated);
+  ui.btnSolveOnce.addEventListener('click', solveFast);
+
+  ui.btnStop.addEventListener('click', () => { stopRequested = true; });
+
+  // sliders update
+  for(const el of [ui.ants, ui.iters, ui.alpha, ui.beta, ui.rho, ui.q, ui.elite]){
+    el.addEventListener('input', () => {
+      updateUI();
+    });
+  }
+
+  // Canvas click to add city
+  ui.cv.addEventListener('click', (evt) => {
+    if(solving) return;
+    const p = canvasToLocal(evt);
+    // avoid adding on top of existing city
+    if(findCityAt(p.x,p.y) != null) return;
+    addCity(p.x, p.y);
+  });
+
+  // Dragging
+  ui.cv.addEventListener('pointerdown', (evt) => {
+    if(solving) return;
+    ui.cv.setPointerCapture(evt.pointerId);
+    const p = canvasToLocal(evt);
+    const idx = findCityAt(p.x,p.y);
+    if(idx != null){
+      dragging = idx;
+      dragOffset.x = p.x - cities[idx].x;
+      dragOffset.y = p.y - cities[idx].y;
+    }
+  });
+
+  ui.cv.addEventListener('pointermove', (evt) => {
+    if(solving) return;
+    if(dragging == null) return;
+    const p = canvasToLocal(evt);
+    cities[dragging].x = p.x - dragOffset.x;
+    cities[dragging].y = p.y - dragOffset.y;
+    bestTour = null; bestLen = Infinity; iter = 0;
+    setStatus('Idle');
+    updateUI();
+    draw();
+  });
+
+  ui.cv.addEventListener('pointerup', () => {
+    dragging = null;
+  });
+
+  window.addEventListener('resize', () => {
+    draw();
+  });
+
+  // -------------------------
+  // Bootstrap with a small default set
+  // -------------------------
+  setRNGFromSeed();
+  addRandomCities(8);
+  updateUI();
+  draw();
+
+})();
+</script>
+</body>
+</html>
