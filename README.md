@@ -2,8 +2,6 @@
 
 This repository hosts a single-page, interactive digital model demonstrating the **Ant Colony Optimization (ACO)** algorithm applied to the **Travelling Salesman Problem (TSP)**.
 
-Repository: https://github.com/dreameterftw/Ant-Colony-Optimization-ACO-TSP-Digital-Model
-
 The model was created as a college Biology course project on **Biomimicry**, as a post-presentation artifact to show practical implementation and application of a bio-inspired algorithm beyond theoretical explanation.
 
 ---
